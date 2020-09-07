@@ -103,3 +103,43 @@ ggplot(df,aes(x=X)) +
   scale_y_continuous("Relat?ve frequency of occurrences", sec.axis = sec_axis(~ . *(1*9),name='PDF'))+
   theme_bw()+ ggtitle('Histogram of the sample along with the PDF')+
     theme(plot.title = element_text(hjust = 0.5))
+
+#4. Rejection method for continuous r.v.'s (Jones):
+#Let X a ?.v. with pdf:fX(x) = 2xe???x2,0< x <???(a)  
+#Use the rejection method to find an efficient way to simulate X
+
+rejection_exp <- function(f_X, c) {
+  while (TRUE) {
+    Y <- rexp(1)
+    u <- runif(1, 0, c*exp(-Y))
+    if (u <= f_X(Y)) return(Y)
+  }
+}
+
+pdf_X<-function(x){2*x*exp(-x**2)}
+pdf_X_gra?h<-function(x){2*x*exp(-x**2)*(1/9)}#same PDF change in dimension only for graph
+
+set.seed(123)
+n=10000
+Observations<-rep(0,n)
+for (i in 1:n)
+  {Observations[i]<- rejection_exp(pdf_X,2)}
+
+df<- data.frame('ID'= 1:n, 'X'=Observations)
+
+df_pdf<-data.frame('X'? seq(0, 5, by = 0.01), 'pdf'=sapply(seq(0, 5, by = 0.01),pdf_X_graph))
+
+ggplot(df,aes(x=X)) + 
+  geom_histogram(data=subset(df),
+                 aes(y=(..count../sum(..count..))), 
+                 breaks= seq(0, 5, by = 0.1),
+                 alpha = 0.2?
+                 color='red',fill="red")+
+  geom_line(data=df_pdf, aes(x = X, y=pdf),color="darkblue")+
+  scale_y_continuous("Relative frequency of occurrences", sec.axis = sec_axis(~ . *(9),name='PDF'))+
+  theme_bw()+ ggtitle('Histogram of the sample alo?g with the PDF')+
+  theme(plot.title = element_text(hjust = 0.5))
+
+
+
+
