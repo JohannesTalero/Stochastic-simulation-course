@@ -95,7 +95,7 @@ for (i in 1:N_external){
 }
 
 hist(q_95_vec, freq = FALSE, xlab="Bootstrap q95",ylab="Relative Frequency")
-quantile(q_95_vec,c(.05,.95))
+quantile(q_95_vec,c(.025,.975))
 
 # Bets
 set.seed(10)
@@ -146,23 +146,74 @@ simulation_Realiability <- function(N){
   return(worked)
 }
 set.seed(10)
-df<-data.frame('Num'= seq(1, 10^4, by = 01))
+df<-data.frame('Num'= seq(2, 10^4, by = 01))
 
 df$simulation_Realiability<-sapply(df$Num, simulation_Realiability)
 df$Realiability_sum<-cumsum(df$simulation_Realiability)
 df$mean<-df$Realiability_sum/df$Num
+df$s<-sqrt((((1-df$mean)^2*df$Realiability_sum)+(df$mean)^2 *(df$Num-df$Realiability_sum))/(df$Num-1))
+df$sdt_R<-df$s/sqrt(df$Num)
+df$lower_bound<- (df$mean-1.96*(df$sdt_R) )
+df$Upper_bound<- (df$mean+1.96*(df$sdt_R) )
+
+ggplot(df, aes(x=Num)) + 
+  geom_line(aes(y = lower_bound), color = "orange2") + 
+  geom_line(aes(y = Upper_bound), color="orange2")+
+  geom_line(aes(y = mean), color="black", linetype="twodash")+
+  scale_y_continuous("Realiability")+
+  theme_bw()+ ggtitle('Reliability estimation and its 95% confidence interval')+
+  theme(plot.title = element_text(hjust = 0.5))
+  
+tail(df)
+
+#6. Markov Chains (Liliana Blanco, ”Probabilidad”, 2a Edici ́on)
+prop_p<-0.7
+prop_q<-1-prop_p
+P<-matrix(0,6,6)
+for (i in 1:6){P[i,1+(i%%6)]<-prop_p
+               P[i,((i-1)%%6)]<-prop_q }
+P[1,6]<-prop_q
+e<-c(1,1,1,1,1,1)
+I<-diag(e)
+E<-matrix(1,nrow=6,ncol=6)
+solve(I+E-t(P),e)
 
 
+move<- function(x){
+  x_n<-x-1
+  prob<-runif(1,0,1)
+  if (prob<prop_p)
+    {x_m<-(x_n+1)%%6
+  }else{x_m<-(x_n-1)%%6}
+  return(x_m+1)
+}
 
+movements <-function(x,N)
+{df<-data.frame('Num'= seq(0, N, by = 01))
+  df$state<-0
+  df$state[1]<-x
+  for (i in 1:N){df$state[i+1]<-move(df$state[i])}
+  return(df)
+}
+set.seed(123)
+df_m<-movements(1,200)
 
+ggplot(df_m, aes(x=Num)) + 
+  geom_line(aes(y = state), color = "grey", linetype = "dashed" )+
+  geom_point(aes(y = state), color = "darkred")+ylim(0, 7)+
+  theme_bw()+ ggtitle('DTMC simulation')+
+  theme(plot.title = element_text(hjust = 0.5))
 
+longrun.prob <- function(df){
+  count <- df %>%group_by(state)%>%count(state)
+  count$n<-count$n/length(df$Num)
+  return(count)}
 
+set.seed(123)
+df_m_1<-movements(1,200)
+longrun.prob(df_m)
 
-
-
-
-
-
-
-
+set.seed(123)
+df_m_2<-movements(1,10000)
+longrun.prob(df_m_2)
 
