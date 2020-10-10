@@ -33,7 +33,7 @@ d<-0.1
 S=1
 while ((S/sqrt(n))>=d){
   n<-n+1
-  set.seed(4)
+  set.seed(10)
   x<-rnorm(n,0,1)
   X_Var<-mean(x)
   S<-sqrt(sum((x-X_Var)^2)/(n-1))
@@ -41,7 +41,9 @@ while ((S/sqrt(n))>=d){
 print(n)
 print(X_Var)
 print(S)
-print(1-S)
+print(abs(1-S))
+print(abs(0-X_Var))
+
 
 #3. Bootstrap (Robert and Casella):
 N<- 1000
@@ -55,16 +57,27 @@ ystar=sample(y,replace=T)
 ystar
 mean(ystar)
 
-
 #--- N Bootstraps ---
 ystar <- matrix(sample(y,N*8,replace=T),nrow=N,ncol=8)
 
 #--- Evaluate the mean for each bootstrap sample ---
 meanystar <- apply(ystar,1,mean)
 
-hist(meanystar, freq = FALSE, xlab="Bootstrap Means",ylab="Relative Frequency")
-
+df<- data.frame('ID'= seq(1, 1000, by = 1), 'X'=meanystar)
+#-----------------------------------
+ggplot(df,aes(x=X)) + 
+  geom_histogram(data=subset(df),
+                 aes(y=(..count../sum(..count..))),
+                 breaks= seq(4, 6.5, by = 0.25),
+                 alpha = 0.2,
+                 color='red',fill="red")+
+  theme_bw()+ ggtitle('Histogram of Bootstrap Means')+
+  scale_y_continuous("Relative Frequency")
+  theme(plot.title = element_text(hjust = 0.5))
+  
 q_95<-sort(meanystar)[0.95*N]
+
+
 
 #Construct a bootstrap experiment that provides a 95% confidence interval on
 #ˆq.95(y).
@@ -100,11 +113,56 @@ N<-10**5
 profit_sim<-array(0,dim=c(N,1))
 for (i in 0:N){profit_sim[i]<-profit()}
 
+#Calculate Values
+mean(profit_sim)
 S<-sqrt(sum((profit_sim-mean(profit_sim))^2)/(N-1))
 S/sqrt(N)
 
 E_X_Real<-5000*0.25-5000*0.5-10000*0.25
 abs(E_X_Real-mean(profit_sim))
-
+#Estimates the probability mass function p
 count <-data.frame(profit_sim) %>%group_by(profit_sim)%>%count(profit_sim)
 count$n<-count$n/N
+
+
+
+#5. Reliability of a system:
+
+p1<-0.9
+p2<-0.5
+p3<-0.2
+p4<-0.1
+
+struct<-function(x1,x2,x3,x4){
+    if ((x1+x2+x3+x4)>=3){
+      return(1)
+    }else{return(0)}}
+  
+simulation_Realiability <- function(N){
+  worked<-0
+  sim_X<-runif(4, 0, 1)
+  X<-sim_X<c(p1,p2,p3,p4)
+  worked<- worked+struct(X[1],X[2],X[3],X[4])
+  return(worked)
+}
+set.seed(10)
+df<-data.frame('Num'= seq(1, 10^4, by = 01))
+
+df$simulation_Realiability<-sapply(df$Num, simulation_Realiability)
+df$Realiability_sum<-cumsum(df$simulation_Realiability)
+df$mean<-df$Realiability_sum/df$Num
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
